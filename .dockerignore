@@ -1,0 +1,7 @@
+.git
+.gitignore
+*.exe
+*.out
+*.o
+*.log
+*.db
