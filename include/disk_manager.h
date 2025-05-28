@@ -19,4 +19,7 @@ public:
     bool write_page(int page_id, const vector<char>& data);
     vector<char> read_page(int page_id);
     void flush();
+
+    int get_num_pages();
+    int allocate_page();
 };

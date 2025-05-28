@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const int HEADER_SIZE = 4;
+const int HEADER_SIZE = 4; // Size of the header in each page (2 bytes for slot count, 2 bytes for free offset)
 const int SLOT_SIZE = 4; // Size of each slot in the header
 const uint16_t INVALID_SLOT = 0xFFFF; // Invalid slot value
 
@@ -43,4 +43,5 @@ public:
     int insert_record(const Record& record);
     Record get_record(int record_id);
     void delete_record(int record_id);
+    int update_record(int record_id, const Record& record);
 };

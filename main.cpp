@@ -1,32 +1,46 @@
+#include <iostream>
 #include "./include/disk_manager.h"
 #include "./include/record_manager.h"
-#include <iostream>
+#include "./include/record_iterator.h"
+
+using namespace std;
 
 int main() {
-    DiskManager dm("dbfile.db");
-    RecordManager rm(dm);
+    cout << "Initializing disk and record manager..." << endl;
 
-    // Insert records
-    int id1 = rm.insert_record(Record("Hello World!"));
-    int id2 = rm.insert_record(Record("Another Record"));
+    DiskManager disk("dbfile.db");
+    RecordManager rm(disk);
 
-    // Print inserted records
-    std::cout << "Record 1 ID: " << id1 << "\n";
-    std::cout << "Record 2 ID: " << id2 << "\n";
+    // Insert a few records
+    cout << "\nInserting records..." << endl;
+    vector<int> record_ids;
+    for (int i = 0; i < 5; ++i) {
+        string data = "Record #" + to_string(i);
+        Record record(vector<char>(data.begin(), data.end()));
+        int id = rm.insert_record(record);
+        record_ids.push_back(id);
+        cout << "Inserted: " << data << " with id " << id << endl;
+    }
 
-    std::cout << "Record 1 Content: " << rm.get_record(id1).to_string() << "\n";
-    std::cout << "Record 2 Content: " << rm.get_record(id2).to_string() << "\n";
+    // Read and print them back
+    cout << "\nReading inserted records..." << endl;
+    for (int id : record_ids) {
+        Record r = rm.get_record(id);
+        string data(r.data.begin(), r.data.end());
+        cout << "Record ID " << id << ": " << data << endl;
+    }
 
-    // Delete the first record
-    rm.delete_record(id1);
-    std::cout << "Record 1 deleted.\n";
+    // Delete one record
+    cout << "\nDeleting record id " << record_ids[2] << endl;
+    rm.delete_record(record_ids[2]);
 
-    // Try to fetch deleted record
-    try {
-        auto r = rm.get_record(id1);
-        std::cout << "Record 1 still exists: " << r.to_string() << "\n";
-    } catch (const std::exception& e) {
-        std::cout << "Failed to fetch Record 1: " << e.what() << "\n";
+    // Iterate through all valid records
+    cout << "\nIterating records with RecordIterator..." << endl;
+    RecordIterator it(disk);
+    while (it.has_next()) {
+        Record r = it.next();
+        string data(r.data.begin(), r.data.end());
+        cout << "Iterated Record: " << data << endl;
     }
 
     return 0;
