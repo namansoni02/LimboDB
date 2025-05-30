@@ -9,7 +9,7 @@ COPY . .
 
 # Build your project
 # Assuming your source files are in src/ and headers in include/
-RUN g++ -std=c++17 -Iinclude main.cpp src/disk_manager.cpp src/record_manager.cpp -o dbms
+RUN g++ -std=c++17 -Iinclude main.cpp src/disk_manager.cpp src/record_iterator.cpp src/record_manager.cpp src/catalog_manager.cpp src/table_manager.cpp src/index_manager.cpp src/query/query_parser.cpp -o dbms
 
 # Default command to run your DBMS executable
 CMD ["./dbms"]

@@ -40,6 +40,10 @@ private:
 public:
     RecordManager(DiskManager& dm);
 
+    DiskManager& get_disk() {
+        return disk;
+    }
+
     int insert_record(const Record& record);
     Record get_record(int record_id);
     void delete_record(int record_id);

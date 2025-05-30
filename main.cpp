@@ -1,47 +1,20 @@
-#include <iostream>
+#include "./include/query/query_parser.h"
 #include "./include/disk_manager.h"
 #include "./include/record_manager.h"
-#include "./include/record_iterator.h"
-
-using namespace std;
+#include "./include/catalog_manager.h"
+#include "./include/table_manager.h"
+#include "./include/index_manager.h"
 
 int main() {
-    cout << "Initializing disk and record manager..." << endl;
+    DiskManager disk_manager("database.db");
+    RecordManager record_manager(disk_manager);
 
-    DiskManager disk("dbfile.db");
-    RecordManager rm(disk);
+    CatalogManager catalog_manager( record_manager);
+    IndexManager index_manager(catalog_manager);
+    TableManager table_manager(catalog_manager, record_manager, index_manager);
 
-    // Insert a few records
-    cout << "\nInserting records..." << endl;
-    vector<int> record_ids;
-    for (int i = 0; i < 5; ++i) {
-        string data = "Record #" + to_string(i);
-        Record record(vector<char>(data.begin(), data.end()));
-        int id = rm.insert_record(record);
-        record_ids.push_back(id);
-        cout << "Inserted: " << data << " with id " << id << endl;
-    }
-
-    // Read and print them back
-    cout << "\nReading inserted records..." << endl;
-    for (int id : record_ids) {
-        Record r = rm.get_record(id);
-        string data(r.data.begin(), r.data.end());
-        cout << "Record ID " << id << ": " << data << endl;
-    }
-
-    // Delete one record
-    cout << "\nDeleting record id " << record_ids[2] << endl;
-    rm.delete_record(record_ids[2]);
-
-    // Iterate through all valid records
-    cout << "\nIterating records with RecordIterator..." << endl;
-    RecordIterator it(disk);
-    while (it.has_next()) {
-        Record r = it.next();
-        string data(r.data.begin(), r.data.end());
-        cout << "Iterated Record: " << data << endl;
-    }
+    QueryParser parser(catalog_manager, table_manager, index_manager);
+    parser.run_interactive();
 
     return 0;
 }
