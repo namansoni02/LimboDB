@@ -1,6 +1,7 @@
 #include "../include/record_manager.h"
 #include <iostream>
 #include <iomanip> // for std::hex and std::setw
+#include "../include/record_id.h"
 
 #define RM_DEBUG_PREFIX "[DEBUG][RECORD_MANAGER] "
 
@@ -8,18 +9,18 @@ RecordManager::RecordManager(DiskManager& dm) : disk(dm), next_page_id(0) {
     std::cout << RM_DEBUG_PREFIX << "RecordManager initialized." << std::endl;
 }
 
-std::pair<int, int> RecordManager::decode_record_id(int record_id) {
-    int page_id = record_id >> 16;
-    int slot_id = record_id & 0xFFFF;
-    std::cout << RM_DEBUG_PREFIX << "Decoded record_id " << record_id << " to page_id " << page_id << " and slot_id " << slot_id << std::endl;
-    return {page_id, slot_id};
-}
+// std::pair<int, int> RecordManager::decode_record_id(int record_id) {
+//     int page_id = record_id >> 16;
+//     int slot_id = record_id & 0xFFFF;
+//     std::cout << RM_DEBUG_PREFIX << "Decoded record_id " << record_id << " to page_id " << page_id << " and slot_id " << slot_id << std::endl;
+//     return {page_id, slot_id};
+// }
 
-int RecordManager::encode_record_id(int page_id, int slot_id) {
-    int record_id = (page_id << 16) | slot_id;
-    std::cout << RM_DEBUG_PREFIX << "Encoded page_id " << page_id << " and slot_id " << slot_id << " to record_id " << record_id << std::endl;
-    return record_id;
-}
+// int RecordManager::encode_record_id(int page_id, int slot_id) {
+//     int record_id = (page_id << 16) | slot_id;
+//     std::cout << RM_DEBUG_PREFIX << "Encoded page_id " << page_id << " and slot_id " << slot_id << " to record_id " << record_id << std::endl;
+//     return record_id;
+// }
 
 int RecordManager::find_free_page() {
     int page_id = 0;
@@ -128,11 +129,15 @@ int RecordManager::insert_record(const Record& record) {
 
     std::cout << RM_DEBUG_PREFIX << "Record inserted at page " << page_id << " slot " << (slot_count - 1) << std::endl;
 
-    return encode_record_id(page_id, slot_count - 1);
+    RecordID rid(page_id, slot_count - 1);
+    int record_id = rid.encode();
+    return record_id;
 }
 
 Record RecordManager::get_record(int record_id) {
-    auto [page_id, slot_id] = decode_record_id(record_id);
+    RecordID decoded = RecordID::decode(record_id);
+    auto page_id = decoded.page_id;
+    auto slot_id = decoded.slot_id;
     std::cout << RM_DEBUG_PREFIX << "Getting record at page " << page_id << ", slot " << slot_id << std::endl;
 
     std::vector<char> page;
@@ -166,7 +171,9 @@ Record RecordManager::get_record(int record_id) {
 }
 
 void RecordManager::delete_record(int record_id) {
-    auto [page_id, slot_id] = decode_record_id(record_id);
+    RecordID decoded = RecordID::decode(record_id);
+    auto page_id = decoded.page_id;
+    auto slot_id = decoded.slot_id;
     std::cout << RM_DEBUG_PREFIX << "Deleting record at page " << page_id << ", slot " << slot_id << std::endl;
 
     std::vector<char> page;
@@ -206,7 +213,9 @@ void RecordManager::delete_record(int record_id) {
 }
 
 int RecordManager::update_record(int record_id, const Record& new_record) {
-    auto [page_id, slot_id] = decode_record_id(record_id);
+    RecordID decoded = RecordID::decode(record_id);
+    auto page_id = decoded.page_id;
+    auto slot_id = decoded.slot_id;
     std::cout << RM_DEBUG_PREFIX << "Updating record at page " << page_id << ", slot " << slot_id << std::endl;
 
     std::vector<char> page = disk.read_page(page_id);
@@ -244,3 +253,5 @@ int RecordManager::update_record(int record_id, const Record& new_record) {
         return insert_record(new_record);  // new record_id returned
     }
 }
+
+

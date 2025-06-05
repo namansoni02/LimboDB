@@ -110,3 +110,12 @@ Record RecordIterator::next() {
 
     return record;
 }
+
+tuple<Record, int, int> RecordIterator::next_with_location() {
+    while(current_page_id < disk.get_num_pages()){
+        vector<char> page = disk.read_page(current_page_id);
+        while(current_slot_id < page.size() / SLOT_SIZE){
+            if(!)
+        }
+    }
+}

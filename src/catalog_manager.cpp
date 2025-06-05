@@ -1,10 +1,13 @@
 #include "../include/catalog_manager.h"
 #include <iostream>
 #include <sstream>
-#include "../include/record_manager.h"
 #include "../include/record_iterator.h"
+#include "../include/table_manager.h"
+#include <algorithm>
 
 #define DEBUG_CATALOG(msg) std::cout << "[DEBUG][CATALOG_MANAGER] " << msg << std::endl;
+
+// ---------- TableSchema Methods ----------
 
 std::string TableSchema::serialize() const {
     std::ostringstream oss;
@@ -37,7 +40,10 @@ TableSchema TableSchema::deserialize(const std::string& record_str) {
     return schema;
 }
 
-CatalogManager::CatalogManager(RecordManager& rm) : record_manager(rm) {
+// ---------- CatalogManager Methods ----------
+
+CatalogManager::CatalogManager(RecordManager& rm, IndexManager& im)
+    : record_manager(rm), index_manager(im) {
     DEBUG_CATALOG("Initializing CatalogManager");
     load_catalog();
 }
@@ -75,13 +81,37 @@ bool CatalogManager::create_table(const std::string& table_name, const std::vect
 
 bool CatalogManager::drop_table(const std::string& table_name) {
     DEBUG_CATALOG("Attempting to drop table '" << table_name << "'");
+
     if (!schema_cache.count(table_name)) {
         DEBUG_CATALOG("Table '" << table_name << "' does not exist");
         return false;
     }
-    // NOTE: Record deletion not implemented yet
+
+    TableSchema schema = schema_cache[table_name];
+    std::string serialized_schema = schema.serialize();
+
+    RecordIterator iterator(record_manager.get_disk());
+    while (iterator.has_next()) {
+        Record rec = iterator.next();
+        std::string rec_str = rec.to_string();
+        if (rec_str == serialized_schema) {
+            RecordID rid(page_id, slot_id);
+            record_manager.delete_record(rid);
+            DEBUG_CATALOG("Deleted schema for '" << table_name << "' at " << rid);
+            break;
+        }
+    }
+
+    TableManager table_manager(*this, record_manager, index_manager);
+    int deleted = 0;
+    deleted = table_manager.delete_from(table_name, [](const std::vector<std::string>&) -> bool {
+        return true;
+    });
+    DEBUG_CATALOG("Deleted " << deleted << " records from table '" << table_name << "'");
+
     schema_cache.erase(table_name);
-    DEBUG_CATALOG("Table '" << table_name << "' dropped from cache (record not deleted from disk)");
+    DEBUG_CATALOG("Table '" << table_name << "' dropped from cache and all records deleted");
+
     return true;
 }
 
@@ -101,4 +131,12 @@ std::vector<std::string> CatalogManager::list_tables() {
     }
     DEBUG_CATALOG("Listing tables: " << names.size() << " found");
     return names;
+}
+
+// ---------- Column Validation Helper ----------
+
+bool CatalogManager::column_exists(const std::string& table_name, const std::string& column_name) {
+    if (!schema_cache.count(table_name)) return false;
+    const auto& columns = schema_cache[table_name].columns;
+    return std::find(columns.begin(), columns.end(), column_name) != columns.end();
 }

@@ -472,38 +472,6 @@ bool QueryParser::parse_select(const std::string& query) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void QueryParser::run_interactive() {
     std::string query;
     std::cout << "Enter SQL queries (type 'exit' to quit):\n";
@@ -525,4 +493,3 @@ void QueryParser::run_interactive() {
         }
     }
 }
-

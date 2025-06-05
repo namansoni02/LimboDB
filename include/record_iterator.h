@@ -1,6 +1,9 @@
 #include<iostream>
 #include"disk_manager.h"
 #include"record_manager.h"
+#include <tuple>
+
+using namespace std;
 
 class RecordIterator {
 private:
@@ -17,4 +20,5 @@ public:
     bool has_next() const;
 
     Record next();
+    tuple<Record, int, int> next_with_location();
 };

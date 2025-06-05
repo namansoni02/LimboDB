@@ -13,12 +13,11 @@ class IndexManager {
 private:
     // table -> column -> key -> set<record_id>
     unordered_map<string, unordered_map<string, map<string, set<int>>>> indexes;
-    CatalogManager& catalog_manager;
 
     bool column_exists(const string& table_name, const string& column_name);
 
 public:
-    IndexManager(CatalogManager& cm);
+    IndexManager() = default;
 
     bool create_index(const string& table_name, const string& column_name);
     bool drop_index(const string& table_name, const string& column_name);
