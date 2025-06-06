@@ -9,19 +9,6 @@ RecordManager::RecordManager(DiskManager& dm) : disk(dm), next_page_id(0) {
     std::cout << RM_DEBUG_PREFIX << "RecordManager initialized." << std::endl;
 }
 
-// std::pair<int, int> RecordManager::decode_record_id(int record_id) {
-//     int page_id = record_id >> 16;
-//     int slot_id = record_id & 0xFFFF;
-//     std::cout << RM_DEBUG_PREFIX << "Decoded record_id " << record_id << " to page_id " << page_id << " and slot_id " << slot_id << std::endl;
-//     return {page_id, slot_id};
-// }
-
-// int RecordManager::encode_record_id(int page_id, int slot_id) {
-//     int record_id = (page_id << 16) | slot_id;
-//     std::cout << RM_DEBUG_PREFIX << "Encoded page_id " << page_id << " and slot_id " << slot_id << " to record_id " << record_id << std::endl;
-//     return record_id;
-// }
-
 int RecordManager::find_free_page() {
     int page_id = 0;
     std::cout << RM_DEBUG_PREFIX << "Searching for free page starting at page_id = 0" << std::endl;
@@ -174,6 +161,17 @@ void RecordManager::delete_record(int record_id) {
     RecordID decoded = RecordID::decode(record_id);
     auto page_id = decoded.page_id;
     auto slot_id = decoded.slot_id;
+
+    // Add validation for page_id and slot_id
+    if (decoded.page_id == static_cast<uint16_t>(-1) || decoded.page_id >= disk.get_num_pages()) {
+        std::cerr << "[ERROR][RECORD_MANAGER] Invalid page id " << decoded.page_id << " in delete_record." << std::endl;
+        throw std::runtime_error("Invalid page id for deletion");
+    }
+    if (slot_id == UINT16_MAX || slot_id < 0) {
+        std::cerr << "[ERROR][RECORD_MANAGER] Invalid slot_id " << slot_id << " in delete_record. Aborting deletion." << std::endl;
+        throw std::invalid_argument("Invalid slot_id in delete_record");
+    }
+
     std::cout << RM_DEBUG_PREFIX << "Deleting record at page " << page_id << ", slot " << slot_id << std::endl;
 
     std::vector<char> page;
@@ -197,6 +195,7 @@ void RecordManager::delete_record(int record_id) {
     if (offset == INVALID_SLOT || size == 0) {
         std::cerr << "[WARNING][RECORD_MANAGER] Record at page " << page_id << ", slot " << slot_id << " is already deleted or invalid." << std::endl;
         // Optional: You could throw here or just log and return
+        return; // Early return to avoid rewriting
     }
 
     slot_entry[0] = INVALID_SLOT;
@@ -211,6 +210,7 @@ void RecordManager::delete_record(int record_id) {
     }
     std::cout << RM_DEBUG_PREFIX << "Page " << page_id << " written after deletion." << std::endl;
 }
+
 
 int RecordManager::update_record(int record_id, const Record& new_record) {
     RecordID decoded = RecordID::decode(record_id);

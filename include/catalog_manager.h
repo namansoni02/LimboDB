@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "record_manager.h"
-#include "index_manager.h"
+#include "./record_manager.h"
+#include "./index_manager.h"
 
 struct TableSchema {
     std::string table_name;

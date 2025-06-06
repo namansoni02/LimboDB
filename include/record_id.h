@@ -1,11 +1,12 @@
 #pragma once
+#include <iostream>
 
 struct RecordID {
 public:
     int page_id;  // Page ID where the record is stored
     int slot_id;  // Slot ID within the page
 
-    RecordID(int p_id = -1, int s_id = -1 ) : page_id(p_id), slot_id(s_id) {}
+    RecordID(int p_id = -1, int s_id = -1) : page_id(p_id), slot_id(s_id) {}
 
     bool operator==(const RecordID& other) const {
         return page_id == other.page_id && slot_id == other.slot_id;
@@ -20,12 +21,12 @@ public:
     }
 
     int encode() const {
-        return (page_id << 16) | (slot_id & 0xFFFF);  // Combine page_id and slot_id into a single integer
+        return (page_id << 16) | slot_id;
     }
 
-    static RecordID decode(int record_id){
-        int page_id = (record_id >> 16) & 0xFFFF;  // Extract page_id from the higher bits
-        int slot_id = record_id & 0xFFFF;          // Extract slot_id from the lower bits
+    static RecordID decode(int record_id) {
+        int page_id = record_id >> 16;
+        int slot_id = record_id & 0xFFFF;
         return RecordID(page_id, slot_id);
     }
 

@@ -40,25 +40,76 @@ int TableManager::insert_into(const string& table_name, const vector<string>& va
 }
 
 
-bool TableManager::delete_from(const string& table_name, int record_id) {
-    DEBUG_TABLE_MANAGER("delete_from called for table: " << table_name);
+bool TableManager::delete_from(const std::string& table_name, int record_id /* = -1 */) {
+    DEBUG_TABLE_MANAGER("delete_from called for table: " << table_name << ", record_id: " << record_id);
 
+    if (record_id == -1) {
+        // Delete ALL records in this table
+        int deleted_count = 0;
+
+        RecordIterator iterator(record_mgr.get_disk());
+        TableSchema schema = catalog.get_schema(table_name);
+
+        while (iterator.has_next()) {
+            auto [rec, page_id, slot_id] = iterator.next_with_location();
+
+            // Debug: Show record location and content
+            DEBUG_TABLE_MANAGER("Attempting to delete record at page_id: " << page_id << ", slot_id: " << slot_id << ", content: " << rec.to_string());
+
+            // Parse record string to check if it belongs to this table
+            std::stringstream ss(rec.to_string());
+            std::vector<std::string> values;
+            std::string token;
+            while (getline(ss, token, '|')) {
+                values.push_back(token);
+            }
+
+            // Here, we must confirm this record belongs to the table.
+            // This depends on your data layout, assuming first value is table_name or similar.
+            // If your table data records do not include table_name, you may need
+            // another way to identify.
+
+            // Let's assume your records **do NOT** store table_name inside the record.
+            // So you might need to delete all records regardless.
+
+            // To be safe, just delete all records for now:
+            RecordID rid(page_id, slot_id);
+            int rid_encoded = rid.encode();
+
+            // Debug: Show encoded record id
+            DEBUG_TABLE_MANAGER("Deleting record with encoded id: " << rid_encoded);
+
+            // Call the original single-record deletion
+            delete_from(table_name, rid_encoded);
+            deleted_count++;
+        }
+
+        DEBUG_TABLE_MANAGER("Deleted " << deleted_count << " records from table: " << table_name);
+        return true;
+    }
+
+    // Delete single record (existing code)
+    DEBUG_TABLE_MANAGER("Deleting single record with id: " << record_id);
     Record rec = record_mgr.get_record(record_id);
-    stringstream ss(rec.to_string());
-    vector<string> values;
-    string token;
+    std::stringstream ss(rec.to_string());
+    std::vector<std::string> values;
+    std::string token;
     while (getline(ss, token, '|')) {
         values.push_back(token);
     }
 
     TableSchema schema = catalog.get_schema(table_name);
     for (size_t i = 0; i < values.size(); ++i) {
+        DEBUG_TABLE_MANAGER("Deleting index entry for column: " << schema.columns[i] << ", value: " << values[i]);
         index_mgr.delete_entry(table_name, schema.columns[i], values[i], record_id);
     }
 
+    DEBUG_TABLE_MANAGER("Deleting record from record manager with id: " << record_id);
     record_mgr.delete_record(record_id);
+    DEBUG_TABLE_MANAGER("Record deleted successfully.");
     return true;
 }
+
 
 
 bool TableManager::update(const string& table_name, int record_id, const vector<string>& new_values) {

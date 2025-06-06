@@ -6,8 +6,6 @@ using namespace std;
 
 #define DEBUG_INDEX_MANAGER(msg) cout << "[DEBUG][INDEX_MANAGER] " << msg << endl;
 
-// Constructor
-IndexManager::IndexManager() {}
 
 // Create index
 bool IndexManager::create_index(const string& table_name, const string& column_name) {

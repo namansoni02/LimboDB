@@ -9,8 +9,8 @@ int main() {
     DiskManager disk_manager("database.db");
     RecordManager record_manager(disk_manager);
 
-    CatalogManager catalog_manager( record_manager);
-    IndexManager index_manager(catalog_manager);
+    IndexManager index_manager;
+    CatalogManager catalog_manager(record_manager, index_manager);
     TableManager table_manager(catalog_manager, record_manager, index_manager);
 
     QueryParser parser(catalog_manager, table_manager, index_manager);

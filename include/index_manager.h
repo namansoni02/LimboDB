@@ -5,7 +5,6 @@
 #include <map>
 #include <vector>
 #include <set>
-#include "./catalog_manager.h"
 
 using namespace std;
 
