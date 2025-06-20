@@ -4,8 +4,15 @@
 #include "../include/record_iterator.h"
 #include <iostream>
 #include <sstream>
+#include <iostream>
 
-#define DEBUG_TABLE_MANAGER(msg) std::cout << "[DEBUG][TABLE_MANAGER] " << msg << std::endl;
+#define DEBUG_COLOR_RESET      "\033[0m"
+#define DEBUG_COLOR_YELLOW     "\033[33m"
+#define DEBUG_COLOR_CYAN       "\033[36m"
+#define DEBUG_DEBUG_LABEL      DEBUG_COLOR_YELLOW"[DEBUG]" DEBUG_COLOR_RESET
+#define DEBUG_TABLE_LABEL      DEBUG_COLOR_CYAN "[TABLE_MANAGER]" DEBUG_COLOR_RESET
+#define DEBUG_TABLE_MANAGER(msg) std::cout << DEBUG_DEBUG_LABEL << DEBUG_TABLE_LABEL << " " << msg << std::endl;
+
 
 TableManager::TableManager(CatalogManager& cat, RecordManager& rm, IndexManager& im)
     : catalog(cat), record_mgr(rm), index_mgr(im) {
@@ -22,6 +29,7 @@ int TableManager::insert_into(const string& table_name, const vector<string>& va
     }
 
     stringstream ss;
+    ss << table_name << "|"; // Prefix with table name
     for (size_t i = 0; i < values.size(); ++i) {
         ss << values[i];
         if (i < values.size() - 1) ss << "|";
@@ -30,7 +38,7 @@ int TableManager::insert_into(const string& table_name, const vector<string>& va
     Record record(ss.str());
     int record_id = record_mgr.insert_record(record);
 
-    // Index insert
+    // Index insert (no change)
     for (size_t i = 0; i < schema.columns.size(); ++i) {
         index_mgr.insert_entry(table_name, schema.columns[i], values[i], record_id);
     }
@@ -46,39 +54,27 @@ bool TableManager::delete_from(const std::string& table_name, int record_id /* =
     if (record_id == -1) {
         // Delete ALL records in this table
         int deleted_count = 0;
+        std::vector<int> to_delete;
 
         RecordIterator iterator(record_mgr.get_disk());
-        TableSchema schema = catalog.get_schema(table_name);
+        const std::string table_prefix = table_name + "|";
+        const std::string schema_prefix = "SCHEMA|";
 
         while (iterator.has_next()) {
             auto [rec, page_id, slot_id] = iterator.next_with_location();
+            std::string rec_str = rec.to_string();
 
-            // Debug: Show record location and content
-            DEBUG_TABLE_MANAGER("Attempting to delete record at page_id: " << page_id << ", slot_id: " << slot_id << ", content: " << rec.to_string());
+            // Skip schema records
+            if (rec_str.rfind(schema_prefix, 0) == 0) continue;
+            // Only delete records for this table
+            if (rec_str.rfind(table_prefix, 0) != 0) continue;
 
-            // Parse record string to check if it belongs to this table
-            std::stringstream ss(rec.to_string());
-            std::vector<std::string> values;
-            std::string token;
-            while (getline(ss, token, '|')) {
-                values.push_back(token);
-            }
-
-            // Here, we must confirm this record belongs to the table.
-            // This depends on your data layout, assuming first value is table_name or similar.
-            // If your table data records do not include table_name, you may need
-            // another way to identify.
-
-            // Let's assume your records **do NOT** store table_name inside the record.
-            // So you might need to delete all records regardless.
-
-            // To be safe, just delete all records for now:
             RecordID rid(page_id, slot_id);
             int rid_encoded = rid.encode();
+            to_delete.push_back(rid_encoded);
+        }
 
-            // Debug: Show encoded record id
-            DEBUG_TABLE_MANAGER("Deleting record with encoded id: " << rid_encoded);
-
+        for (int rid_encoded : to_delete) {
             // Call the original single-record deletion
             delete_from(table_name, rid_encoded);
             deleted_count++;
@@ -90,23 +86,7 @@ bool TableManager::delete_from(const std::string& table_name, int record_id /* =
 
     // Delete single record (existing code)
     DEBUG_TABLE_MANAGER("Deleting single record with id: " << record_id);
-    Record rec = record_mgr.get_record(record_id);
-    std::stringstream ss(rec.to_string());
-    std::vector<std::string> values;
-    std::string token;
-    while (getline(ss, token, '|')) {
-        values.push_back(token);
-    }
-
-    TableSchema schema = catalog.get_schema(table_name);
-    for (size_t i = 0; i < values.size(); ++i) {
-        DEBUG_TABLE_MANAGER("Deleting index entry for column: " << schema.columns[i] << ", value: " << values[i]);
-        index_mgr.delete_entry(table_name, schema.columns[i], values[i], record_id);
-    }
-
-    DEBUG_TABLE_MANAGER("Deleting record from record manager with id: " << record_id);
     record_mgr.delete_record(record_id);
-    DEBUG_TABLE_MANAGER("Record deleted successfully.");
     return true;
 }
 
@@ -161,8 +141,19 @@ vector<Record> TableManager::scan(const string& table_name) {
     DEBUG_TABLE_MANAGER("scan called for table: " << table_name);
     vector<Record> records;
     RecordIterator it(record_mgr.get_disk());
+    const std::string schema_prefix = "SCHEMA|";
+    const std::string table_prefix = table_name + "|";
     while (it.has_next()) {
-        records.push_back(it.next());
+        Record rec = it.next();
+        std::string rec_str(rec.data.begin(), rec.data.end());
+        // Skip schema records
+        if (rec_str.rfind(schema_prefix, 0) == 0) continue;
+        // Only include records for this table
+        if (rec_str.rfind(table_prefix, 0) != 0) continue;
+        // Remove table name prefix before returning
+        rec_str = rec_str.substr(table_prefix.size());
+        rec.data = std::vector<char>(rec_str.begin(), rec_str.end());
+        records.push_back(rec);
     }
     DEBUG_TABLE_MANAGER("Scanned " << records.size() << " records from table: " << table_name);
     return records;

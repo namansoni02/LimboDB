@@ -5,30 +5,42 @@
 #include "../include/table_manager.h"
 #include <algorithm>
 
-#define DEBUG_CATALOG(msg) std::cout << "[DEBUG][CATALOG_MANAGER] " << msg << std::endl;
+// ANSI color codes for debug output
+#define COLOR_RESET   "\033[0m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_CYAN    "\033[36m"
+
+#define DEBUG_CATALOG(msg) \
+    std::cout << COLOR_YELLOW << "[DEBUG]" << COLOR_CYAN << "[CATALOG_MANAGER] " << COLOR_RESET << msg << std::endl;
 
 // ---------- TableSchema Methods ----------
 
 std::string TableSchema::serialize() const {
     std::ostringstream oss;
-    oss << table_name << "|";
+    oss << "SCHEMA|" << table_name << "|";
     for (size_t i = 0; i < columns.size(); ++i) {
         oss << columns[i];
-        if (i < columns.size() - 1) oss << ",";
+        if (i + 1 < columns.size()) oss << ",";
     }
     DEBUG_CATALOG("Serialized schema for table '" << table_name << "': " << oss.str());
     return oss.str();
 }
 
+// Update deserialization to check prefix
 TableSchema TableSchema::deserialize(const std::string& record_str) {
-    size_t sep = record_str.find('|');
+    const std::string prefix = "SCHEMA|";
+    if (record_str.rfind(prefix, 0) != 0) { // Not a schema record
+        DEBUG_CATALOG("Skipped non-schema record: '" << record_str << "'");
+        return TableSchema{};
+    }
+    size_t sep = record_str.find('|', prefix.size());
     if (sep == std::string::npos) {
         DEBUG_CATALOG("Failed to deserialize: missing separator in '" << record_str << "'");
-        return TableSchema{}; // Return empty schema instead of throwing
+        return TableSchema{};
     }
 
     TableSchema schema;
-    schema.table_name = record_str.substr(0, sep);
+    schema.table_name = record_str.substr(prefix.size(), sep - prefix.size());
     std::string cols = record_str.substr(sep + 1);
 
     size_t pos = 0, prev = 0;
