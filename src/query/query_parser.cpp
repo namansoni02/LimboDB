@@ -25,6 +25,8 @@ bool QueryParser::execute_query(const std::string& query) {
         return parse_update(query);
     } else if (q.find("select") == 0) {
         return parse_select(query);
+    } else if (q.find("print table") == 0) {
+        return parse_print_table(query);
     }
 
     cout << "[ERROR] Unsupported or invalid query." << endl;
@@ -492,4 +494,30 @@ void QueryParser::run_interactive() {
             std::cout << "[ERROR] Failed to execute query.\n";
         }
     }
+}
+
+bool QueryParser::parse_print_table(const std::string& query) {
+    std::string q = query;
+    std::transform(q.begin(), q.end(), q.begin(), ::tolower);
+    
+    // Extract table name
+    size_t pos = q.find("print table");
+    if (pos == std::string::npos) return false;
+    
+    std::string tableName = query.substr(pos + 11); // "print table" is 11 chars
+    trim(tableName);
+    
+    // Remove trailing semicolon
+    if (!tableName.empty() && tableName.back() == ';') {
+        tableName.pop_back();
+    }
+    trim(tableName);
+    
+    if (tableName.empty()) {
+        std::cout << "[ERROR] Missing table name" << std::endl;
+        return false;
+    }
+    
+    table_manager.printTable(tableName);
+    return true;
 }

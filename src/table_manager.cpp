@@ -5,6 +5,10 @@
 #include <iostream>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+#include <numeric>  // <-- needed for accumulate
 
 #define DEBUG_COLOR_RESET      "\033[0m"
 #define DEBUG_COLOR_YELLOW     "\033[33m"
@@ -157,4 +161,72 @@ vector<Record> TableManager::scan(const string& table_name) {
     }
     DEBUG_TABLE_MANAGER("Scanned " << records.size() << " records from table: " << table_name);
     return records;
+}
+
+void TableManager::printTable(const std::string& tableName) {
+    // Get table schema
+    TableSchema schema = catalog.get_schema(tableName);
+    if (schema.table_name.empty()) {
+        std::cerr << "[ERROR] Table '" << tableName << "' does not exist." << std::endl;
+        return;
+    }
+
+    // Get all records
+    std::vector<Record> records = scan(tableName);
+
+    // Compute column widths
+    std::vector<size_t> colWidths(schema.columns.size(), 0);
+    for (size_t i = 0; i < schema.columns.size(); ++i) {
+        colWidths[i] = schema.columns[i].length();  // Start with header length
+    }
+
+    // Update column widths based on record contents
+    for (const auto& rec : records) {
+        std::string recStr(rec.data.begin(), rec.data.end());
+        std::vector<std::string> values;
+        std::stringstream ss(recStr);
+        std::string field;
+        while (std::getline(ss, field, '|')) {
+            values.push_back(field);
+        }
+
+        for (size_t i = 0; i < values.size() && i < colWidths.size(); ++i) {
+            colWidths[i] = std::max(colWidths[i], values[i].length());
+        }
+    }
+
+    // Print header row
+    for (size_t i = 0; i < schema.columns.size(); ++i) {
+        std::cout << "| " << std::setw(colWidths[i]) << std::left << schema.columns[i] << " ";
+    }
+    std::cout << "|\n";
+
+    // Print separator
+    for (size_t i = 0; i < schema.columns.size(); ++i) {
+        std::cout << "|-" << std::setw(colWidths[i]) << std::setfill('-') << "-" << std::setfill(' ');
+    }
+    std::cout << "|\n";
+
+    // Print records
+    if (records.empty()) {
+        std::cout << "| " << std::setw(std::accumulate(colWidths.begin(), colWidths.end(), 3 * colWidths.size())) 
+                  << std::left << "No records found" << " |\n";
+        return;
+    }
+
+    for (const auto& rec : records) {
+        std::string recStr(rec.data.begin(), rec.data.end());
+        std::vector<std::string> values;
+        std::stringstream ss(recStr);
+        std::string field;
+        while (std::getline(ss, field, '|')) {
+            values.push_back(field);
+        }
+
+        for (size_t i = 0; i < schema.columns.size(); ++i) {
+            std::string val = (i < values.size()) ? values[i] : "";
+            std::cout << "| " << std::setw(colWidths[i]) << std::left << val << " ";
+        }
+        std::cout << "|\n";
+    }
 }

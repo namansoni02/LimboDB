@@ -22,4 +22,5 @@ public:
     bool update(const string& table_name, int record_id, const vector<string>& new_values);
     Record select(const string& table_name, int record_id);
     vector<Record> scan(const string& table_name); // optional: full scan
+    void printTable(const std::string& tableName);
 };

@@ -29,6 +29,8 @@ private:
     bool parse_delete(const std::string& query);
     bool parse_update(const std::string& query);
     bool parse_select(const std::string& query);
+    bool parse_print_table(const std::string& query);
+
 
     // Utility parsing helpers
     static void trim(std::string& s);

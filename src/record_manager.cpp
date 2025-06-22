@@ -254,4 +254,3 @@ int RecordManager::update_record(int record_id, const Record& new_record) {
     }
 }
 
-
