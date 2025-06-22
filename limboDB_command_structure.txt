@@ -87,7 +87,7 @@ Description:
   Prints all records from the specified table in a formatted tabular view.
 Example:
   PRINT TABLE users;
-
+git push
 ------------------------
 
 EXIT / QUIT
