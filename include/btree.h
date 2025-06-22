@@ -47,7 +47,7 @@ private:
     void insert_in_leaf(LeafNode* leaf, const Key& key, const Value& value);
     void insert_in_parent(Node* left, const Key& key, Node* right);
     Node* split_leaf(LeafNode* leaf);
-    Node* split_internal(InternalNode* Node);
+    Node* split_internal(InternalNode* node);
     void remove_from_leaf(LeafNode* leaf, const Key& key, const Value& value);
     void merge_or_redistribute(Node* node);
 
