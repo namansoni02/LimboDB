@@ -1,0 +1,117 @@
+limboDB Command Reference
+
+------------------------
+
+CREATE TABLE
+Syntax:
+  CREATE TABLE <table_name> (<column1>, <column2>, ..., <columnN>);
+
+
+Description:
+  Creates a new table with the specified columns.
+Example:
+  CREATE TABLE users (username, email, age);
+
+------------------------
+
+DROP TABLE
+Syntax:
+  DROP TABLE <table_name>;
+
+
+Description:
+  Deletes the named table from the database.
+Example:
+  DROP TABLE users;
+
+------------------------
+
+INSERT INTO
+Syntax:
+  INSERT INTO <table_name> (<column1>, <column2>, ..., <columnN>) VALUES (value1, value2, ..., valueN);
+  INSERT INTO <table_name> VALUES (value1, value2, ..., valueN);
+
+
+Description:
+  Inserts a new record. The column list is optional; if omitted, values must match the schema order.
+Example:
+  INSERT INTO users (username, email, age) VALUES ('alice', 'alice@email.com', 30);
+  INSERT INTO users VALUES ('bob', 'bob@email.com', 25);
+
+------------------------
+
+DELETE FROM
+Syntax:
+  DELETE FROM <table_name> WHERE record_id = <some_id>;
+
+
+Description:
+  Deletes a record by its record_id. Only deletion by record_id is supported.
+Example:
+  DELETE FROM users WHERE record_id = 3;
+
+------------------------
+
+UPDATE
+Syntax:
+  UPDATE <table_name> SET <column1> = value1, <column2> = value2 WHERE record_id = <some_id>;
+
+
+Description:
+  Updates specified columns for a record identified by record_id.
+Example:
+  UPDATE users SET age = 31, email = 'alice_new@email.com' WHERE record_id = 1;
+
+------------------------
+
+SELECT
+Syntax:
+  SELECT * FROM <table_name>;
+    Retrieves all records from the table.
+  SELECT * FROM <table_name> WHERE record_id = <some_id>;
+    Retrieves a single record by record_id.
+
+
+Example:
+  SELECT * FROM users;
+  SELECT * FROM users WHERE record_id = 2;
+
+------------------------
+
+PRINT TABLE
+Syntax:
+  PRINT TABLE <table_name>;
+
+
+Description:
+  Prints all records from the specified table in a formatted tabular view.
+Example:
+  PRINT TABLE users;
+
+------------------------
+
+EXIT / QUIT
+Syntax:
+  exit
+  quit
+
+
+Description:
+  Exits the interactive SQL mode.
+Example:
+  exit
+
+
+
+------------------------
+
+Notes:
+- All commands are case-insensitive.
+- Only basic SQL-like syntax is supported.
+- WHERE clauses are only supported for record_id in DELETE, UPDATE, and SELECT statements.
+- Only * is supported in the SELECT clause (no column projections).
+- Errors are reported for unsupported or invalid queries.
+
+------------------------
+
+End of limboDB command list.
