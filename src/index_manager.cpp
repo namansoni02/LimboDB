@@ -18,17 +18,24 @@ bool IndexManager::create_index(const string& table_name, const string& column_n
 // Drop index
 bool IndexManager::drop_index(const string& table_name, const string& column_name) {
     DEBUG_INDEX_MANAGER("Dropping index on table '" << table_name << "', column '" << column_name << "'");
-    if (indexes.count(table_name) && indexes[table_name].count(column_name)) {
-        indexes[table_name].erase(column_name);
-        if (indexes[table_name].empty()) {
-            indexes.erase(table_name);
+    
+    // Declare iterator first
+    auto table_it = indexes.find(table_name);
+    if (table_it != indexes.end()) {
+        auto col_it = table_it->second.find(column_name);  // Explicit declaration
+        if (col_it != table_it->second.end()) {
+            table_it->second.erase(col_it);
+            if (table_it->second.empty()) {
+                indexes.erase(table_it);
+            }
+            DEBUG_INDEX_MANAGER("Index dropped successfully");
+            return true;
         }
-        DEBUG_INDEX_MANAGER("Index dropped successfully");
-        return true;
     }
     DEBUG_INDEX_MANAGER("Index not found to drop");
     return false;
 }
+
 
 // Insert entry
 bool IndexManager::insert_entry(const string& table_name, const string& column_name, const string& key, int record_id) {
