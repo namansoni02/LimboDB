@@ -23,8 +23,7 @@ bool IndexManager::drop_index(const string& table_name, const string& column_nam
     auto table_it = indexes.find(table_name);
     if (table_it != indexes.end()) {
         auto col_it = table_it->second.find(column_name);  // Explicit declaration
-        if (col_it != tabl
-            e_it->second.end()) {
+        if (col_it != table_it->second.end()) {
             table_it->second.erase(col_it);
             if (table_it->second.empty()) {
                 indexes.erase(table_it);
